@@ -182,7 +182,7 @@ def trainable_graph(NN, directory='/tmp/test-trainable-model'):
     tf.summary.histogram('forces', forces)
     optimizer = tf.train.AdamOptimizer(1e-4)
     gvs = optimizer.compute_gradients(energy)
-    print(gvs)
+    graph.running_mean(energy, 'avg-energy')
     #capped_gvs = [(tf.clip_by_value(grad, -1., 1.), var) for grad, var in gvs]
     train_op = optimizer.apply_gradients(gvs)
     #check = tf.add_check_numerics_ops()

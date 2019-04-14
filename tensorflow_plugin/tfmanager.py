@@ -192,10 +192,14 @@ class TFManager:
                     if checkpoint is None:
                         raise ValueError('Could not find bootstrap checkpoint {}'.format(self.bootstrap))
                     self.log.info('Using bootstrap checkpoint {}'.format(self.bootstrap))
+                    # only load vars in the checkpoint!
+                    cp = tf.NewCheckpointReader(checkpoint)
+                    var_to_shape_map = cp.get_variable_to_shape_map()
+                    var_list = var_to_shape_map.keys()
                     #convert bootstrap map values into actual variables
                     variable_map = None
                     if self.bootstrap_map is not None:
-                        variables = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
+                        variables = var_list
                         variable_map = dict()
                         for k,vname in self.bootstrap_map.items():
                             value = None
@@ -205,7 +209,12 @@ class TFManager:
                             if value is None:
                                 raise ValueError('Could not find variable {} in graph while processing bootstrap_map'.format(vname))
                             variable_map[k] = value
-                    bootstrap_saver = tf.train.Saver(variable_map, **saver_args)
+                        bootstrap_saver = tf.train.Saver(variable_map, **saver_args)
+                    else:
+                        # only load vars in the checkpoint!
+                        cp = tf.NewCheckpointReader(checkpoint)
+                        var_to_shape_map = cp.get_variable_to_shape_map()
+                        bootstrap_saver = tf.train.Saver(var_to_shape_map.keys(), **saver_args)
                     bootstrap_saver.restore(sess, checkpoint)
                 else:
                     checkpoint = tf.train.latest_checkpoint(self.model_directory)
